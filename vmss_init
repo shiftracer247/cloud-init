@@ -1,0 +1,646 @@
+#!/bin/bash
+
+#####################################
+# Set Your Environment Variable here 
+#####################################
+
+# Log Analytics Workspace ID and key
+#
+workspaceId='${workspaceId}'
+cipherText='${cipherText}'
+
+# Get Storage Account Name and PLE IP Address for /etc/hosts
+str_name='${storage_name}'
+strurl="https://$str_name.blob.core.windows.net/nvaconfig"
+str_bin="https://$str_name.blob.core.windows.net/nva-software-v2"
+str_config="https://$str_name.blob.core.windows.net/nvaconfig"
+str_do="https://$str_name.blob.core.windows.net/declarative-onboarding"
+str_images="https://$str_name.blob.core.windows.net/f5-hotfix"
+prefix='${prefix}'
+dns='${dns}'
+
+# Get Key Vault URL Here
+kv='stsbss01-westus2-kv-001'
+kvurl="https://$kv.vault.azure.net"
+
+bigIpMgmtPort=8443
+localIpAddress="127.0.0.1:$bigIpMgmtPort"
+
+# External data-group files for use by iRules
+DGGlobalHostAllow="${map1_file}"
+DGLinkIDhosts="${map2_file}"
+DGURLMapIpToPort="${map3_file}"
+DGURLIDToLinkId="${map4_file}"
+
+pathToMapPortToIPportDg="/tmp/mapPortToIPportDg.txt"
+pathToDstPortToLinkidDg="/tmp/dstPortToLinkidDg.txt"
+pathToGlobalHostAllowDg="/tmp/globalHostAllowDg.txt"
+pathToLinkIDhostsDg="/tmp/linkIDhostsDg.txt"
+pathToDnsMonitor="/tmp/dnsmonitor.txt"
+pathToAs3="/tmp/custom_config"
+
+bastionIruleFile="proxy-protocol-v2-bastionIrule2.tcl"
+bastionRetryIruleFile="proxy-protocol-v2-bastionIrule2-retry.tcl"
+hostIdCheckIruleFile="proxy-protocol-v2-hostIDCheck.tcl"
+hostIdCheckRetryIruleFile="proxy-protocol-v2-hostIDCheck-retry.tcl"
+genericProtoIruleFile="proxy-protocol-v2-proxy-v2-reader-genericproto2.tcl"
+fqdnIruleFile="proxy-protocol-v2-proxyV2reader-fqdn.tcl"
+dgdumpIruleFile="dgdump.tcl"
+connIruleFile="conn-checker.tcl"
+
+pathToBastionIrule="/tmp/$bastionIruleFile"
+pathToBastionRetryIrule="/tmp/$bastionRetryIruleFile"
+pathToHostIdCheckIrule="/tmp/$hostIdCheckIruleFile"
+pathToHostIdCheckRetryIrule="/tmp/$hostIdCheckRetryIruleFile"
+pathToGenericProtoIrule="/tmp/$genericProtoIruleFile"
+pathToFqdnIrule="/tmp/$fqdnIruleFile"
+pathToDgdumpIrule="/tmp/$dgdumpIruleFile"
+pathToConnIrule="/tmp/$connIruleFile"
+pathToImages="/shared/images"
+preAS3objects="/shared/cloud_init/preAS3objects.conf"
+
+
+# Define NTP servers and timezone
+ntpServer="0.pool.ntp.org"
+timeZone="UTC"
+bigIpModules='"ltm":"nominal"'
+
+# Create/Add User to it can make API call
+apiUser=attadmin
+
+# Wait time before retrying failed downloads
+# This is also used in loops requiring an execution delay. Modify with care.
+waitTime=2
+loopLimit=30
+workdir="/shared/cloud_init"
+short_init="short_init.bash"
+
+source /usr/lib/bigstart/bigip-ready-functions
+
+
+#####################################
+## Utility Functions
+#####################################
+# Get the instance IP address from metadata (unnecessary with a single-nic deployment)
+get_ip_address() {
+  ipAddress=$(curl -s -H Metadata:true "http://169.254.169.254/metadata/instance/network/interface/0/ipv4/ipAddress/0/privateIpAddress?api-version=2017-08-01&format=text")
+  echo $ipAddress
+}
+
+# Get Azure location
+get_location() {
+  location=$(curl -s -H Metadata:true "http://169.254.169.254/metadata/instance/compute?api-version=2019-03-11" | grep -o -E "\"location\":\"[a-zA-Z0-9]+\"" | awk -F\: '{print $2}' | tr -d '"')
+  echo $location
+}
+
+# Create an instance name
+mk_instance_name() {
+  instanceName="stcnxs01-f5$(( $RANDOM % 1000 )).$location.cloudapp.azure.com"
+  echo $instanceName
+}
+
+# Bash function to make sure BIG-IP is ready before proceeding with configuration.
+# Mainly for use following the DO_rpm submission
+wait_for_do_config_complete() {
+  limit=$loopLimit
+  count=0
+  url="https://$localIpAddress/mgmt/shared/declarative-onboarding"
+  header="content-type: application/json"
+  while true; do
+    code=$(curl -sku $CREDS -H "$header" $url -o $workdir/wait_for_do.out.json -w '%{http_code}')
+    if (( ${code:-0000} == 200 )); then
+      echo "$(date +%T) (${FUNCNAME[0]}): DO status good; proceeding with cloud-init"
+      return
+    elif (( ${code:-0000} == 202 )); then
+      echo "$(date +%T) (${FUNCNAME[0]}): DO status: $code, continuing to wait..."
+    else
+      echo "$(date +%T) (${FUNCNAME[0]}): Unknown result code ('$code'), Check '$workdir/wait_for_do.out.json' for output details"
+    fi
+
+    if (( $count >= $limit )); then
+      echo "$(date +%T) (${FUNCNAME[0]}): DO wait period exceeded, returning"
+      return
+    else
+      ((count++))
+      sleep $waitTime
+    fi
+  done
+}
+
+# Wait for TMM services to be fully prepared
+wait_for_active() {
+  echo "$(date +%T) (${FUNCNAME[0]}): Waiting for services to become available"
+  good="Active"
+  while true; do
+    status=$(cat /var/prompt/ps1)
+    if [[ $status =~ $good ]]; then
+      # TMM-adjacent services are ready
+      break
+    fi
+  done
+  echo "$(date +%T) (${FUNCNAME[0]}): Status is $status, proceeding with cloud-init"
+}
+
+# Get storage token
+get_storage_token() {
+  echo "$(date +%T) Retrieving storageToken"
+  limit=$loopLimit
+  storageToken=""
+  
+  headers='Metadata: true'
+  tokenUrl='http://169.254.169.254/metadata/identity/oauth2/token?api-version=2018-02-01&resource=https://storage.azure.com'
+
+  for (( c=0; c < $limit; c++ )); do
+    storageToken=$(curl -sH "$headers" $tokenUrl | jq -r ".access_token")
+    if [[ -n $storageToken ]]; then
+      echo "$(date +%T) Successfully retrieved \$storageToken"
+      break
+    else
+      echo "$(date +%T) storageToken request failed; retrying in $waitTime second(s)"
+      sleep $waitTime
+    fi
+  done
+}
+
+# Get storage token
+get_vault_token() {
+  echo "$(date +%T) Retrieving KeyVaultToken"
+  limit=$loopLimit
+
+  headers='Metadata: true'
+  tokenUrl="http://169.254.169.254/metadata/identity/oauth2/token?api-version=2018-02-01&resource=https://vault.azure.net"
+
+  for (( c=0; c < $limit; c++ )); do
+    KeyVaultToken=$(curl -sH "$headers" $tokenUrl | jq -r ".access_token")
+    if [[ -n $KeyVaultToken ]]; then
+      echo "$(date +%T) KeyVaultToken retreived successfully"
+      break
+    else
+      echo "$(date +%T) KeyVaultToken request failed; retrying in $waitTime second(s)"
+      sleep $waitTime
+    fi
+  done
+}
+# Get admin user password (or key)
+get_admin_password() {
+  echo "$(date +%T) Retrieving adminPasswordOrKey"
+  limit=$loopLimit
+
+  headers="Authorization: Bearer $KeyVaultToken"
+  #echo "$(date +%T) curl -H 'Authorization: Bearer $KeyVaultToken' $kvurl/secrets/nva-secret?api-version=2016-10-01 |jq -r .value"                                                                
+  for (( c=0; c < $limit; c++)); do
+    adminPasswordOrKey=$(curl -sH "$headers" $kvurl/secrets/nva-secret?api-version=2016-10-01 | jq -r .value)
+    
+    if [[ -n $adminPasswordOrKey ]]; then
+      echo "$(date +%T) adminPassswordOrKey retreived successfully"
+      break
+    else
+      echo "$(date +%T) adminPassswordOrKey request failed; retrying in $waitTime second(s)"
+      sleep $waitTime
+    fi
+  done
+}
+
+# Save the config and write a couple messages to allow for easier timimg
+save_config() {
+  echo "$(date +%T) (${FUNCNAME[0]}): Saving configuration"
+  tmsh save sys config
+  echo "$(date +%T)  (${FUNCNAME[0]}): Completed config save"
+}
+#################################################################################################
+## End of Utility Functions
+#################################################################################################
+
+#################################################################################################
+## Configuration Functions
+#################################################################################################
+
+# Restart the specified service and wait until REST services are available before allowing script to proceed
+add_remote_hosts() {
+  declare -A remoteHosts
+  hostsConfig='/shared/cloud_init/new_hosts.conf'
+  limit=$loopLimit
+
+  # Add a static entry
+  remoteHosts['stsbss01-westus2-kv-001.vault.azure.net']='130.3.53.103'
+
+  echo "$(date +%T) Downloading '$prefix' (hosts file)"
+
+  hdr1="x-ms-version:2017-11-09"
+  hdr2="Authorization:Bearer $storageToken"
+  #echo "$(date +%T) curl -s -H "$hdr1" -H "$hdr2" https://$str_name.blob.core.windows.net/etchost-pe/$prefix -o /tmp/hosts"
+
+  for (( c=0; $c < $limit; c++)); do
+    hostStatus=$(curl -s -H "$hdr1" -H "$hdr2" https://$str_name.blob.core.windows.net/etchost-pe/$prefix -o /tmp/hosts -w '%{http_code}')
+
+    if [[ $hostStatus == 200 ]]; then
+      echo "$(date +%T) hosts file downloaded"
+      break
+    else
+      echo "$(date +%T) '$prefix' download unsuccessful, retrying in $waitTime seconds"
+      sleep $waitTime
+    fi
+  done
+
+  # Add all host entries to the remoteHosts array
+  while IFS= read -r line; do
+    I=$(echo $line | awk '{ print $1 }')
+    H=$(echo $line | awk '{ print $2 }' | sed 's/\r$//')
+    echo "$(date +%T) Found remote-hosts entry for $H ($I)"
+    remoteHosts[$H]=$I
+  done < /tmp/hosts
+
+  # start the file
+  echo -e "sys global-settings { remote-host {\n  " > $hostsConfig
+
+  # Add all hosts in $remoteHosts array to $hostsConfig
+  count=1
+  for h in ${!remoteHosts[@]}; do
+    # h contains the full FQDN
+    s=$(printf "remotehost%02i" $count) # short name
+    a=${remoteHosts[$h]}                # address
+    echo "$(date +%T) Adding entry '$s'  ($h: $a)"
+    echo "  $s { hostname $h addr $a }" >> $hostsConfig
+    ((count++))
+  done
+
+  # close config file
+  echo -e "  }\n}" >> $hostsConfig
+
+  # validate config file
+  tmsh load sys config file $hostsConfig merge verify
+
+  if [[ $? == 0 ]]; then
+    tmsh load sys config file $hostsConfig merge
+  fi
+}
+
+restart_service() {
+  limit=$loopLimit
+  svc=$1
+
+  # if provided, created the URI for the specific service to verify
+  if [[ -n $2 ]]; then
+    uri="mgmt/shared/$2/info"
+  else
+    uri="mgmt/shared/iapp/package-management-tasks"
+  fi
+
+  echo "$(date +%T) Restarting service: $svc"
+  tmsh restart sys service $svc
+
+  for s in $svc; do
+    for (( c=0; c < $limit; c++ )); do
+      svc_status=$(curl -sku $CREDS https://$localIpAddress/$uri -w '%{http_code}' -o /dev/null)
+
+      if (( ${svc_status:-000} == 200 )); then
+        echo "$(date +%T) Service $s detected up"
+        break
+      else
+        sleep $waitTime
+      fi
+
+    done
+  done
+}
+
+
+##################
+# Setup Telemetry
+##################
+submit_ts_config() {
+  echo -e "\n*** Starting: Telemetry setup"
+
+  # Update telemetry settings to push syslogs 
+  echo "$(date +%T) Adding syslog server for Telemetry-Streaming logs"
+  tmsh modify sys syslog remote-servers replace-all-with { server { host 127.0.0.1 remote-port 6514 } }
+  echo "$(date +%T) Saving config (pre-Telemetry-Streaming config)"
+
+  good_response="subscriptions"
+  resource_id=$(curl -sH Metadata:true "http://169.254.169.254/metadata/instance/compute/resourceId?api-version=2020-09-01&format=text")
+
+  # this loop will run every second to get the resource id from meta-data until the variable is populated
+  until [[ $resource_id =~ $good_response ]]; do
+    echo "$(date +%T) resource_id does not match '$good_response', trying again in one second"
+    resource_id=$(curl -sH Metadata:true "http://169.254.169.254/metadata/instance/compute/resourceId?api-version=2020-09-01&format=text")
+    sleep 1
+  done
+
+
+  DATA=$(printf '{ "class": "Telemetry", "My_System": { "class": "Telemetry_System", "systemPoller": { "interval": 60, "actions": [{ "enable": true, "locations": { "system": true }, "setTag": { "resource_id": "%s" } }] } }, "My_Listener": { "class": "Telemetry_Listener", "port": 6514 }, "My_Consumer": { "class": "Telemetry_Consumer", "type": "Azure_Log_Analytics", "workspaceId": "%s", "passphrase": { "cipherText": "%s" }}}' $resource_id $workspaceId $cipherText)
+
+  echo "$(date +%T) Submitting Telemetry-Streaming config"
+  echo $(date +%T) curl -sku "'$apiUser:<pass>'" -H 'Content-Type: application/json' -X POST  https://$localIpAddress/mgmt/shared/telemetry/declare -d "$DATA"
+  curl -sku $CREDS -H 'Content-Type: application/json' -X POST  https://$localIpAddress/mgmt/shared/telemetry/declare -d "$DATA"
+
+  echo "$(date +%T) *** Ending: Telemetry setup completed"    # need some error checking
+}
+
+# Create DG refresh Job
+create_dgrefresh_icall() {
+  echo -e "\n$(date +%T) *** Starting DG refresh setup"
+
+  echo "$(date +%T) Installing /tmp/dgscript"
+  /usr/bin/install -b -m 755 /dev/null /tmp/dgscript;
+
+  echo "$(date +%T) Writing /tmp/dgscript"
+  cat << EOF > /tmp/dgscript
+
+sys icall script docurlbinary {
+  app-service none
+  definition {
+
+      set DGURLMapIpToPort $str_config/~DGURLMapIpToPort~
+      set DGURLIDToLinkId $str_config/~DGURLIDToLinkId~
+
+      set storageToken [exec curl -s -H "Metadata: true" -H "Accept: application/json" -H "Content-Type: application/json" "http://169.254.169.254/metadata/identity/oauth2/token?api-version=2018-02-01&resource=https%3A%2F%2Fstorage.azure.com%2F" | jq --raw-output ".access_token"]
+      exec curl -s \$DGURLMapIpToPort -H "x-ms-version: 2017-11-09" -H "Authorization: Bearer \$storageToken" -o /var/tmp/DGURLMapIpToPort
+      tmsh::modify sys file data-group /Common/mapPortToIPport separator ":=" source-path file:/var/tmp/DGURLMapIpToPort type string
+
+      exec curl -s \$DGURLIDToLinkId -H "x-ms-version: 2017-11-09" -H "Authorization: Bearer \$storageToken" -o /var/tmp/DGURLIDToLinkId
+      tmsh::modify sys file data-group /Common/dstPortToLinkidDG separator ":=" source-path file:/var/tmp/DGURLIDToLinkId type string
+
+  }
+  description none
+  events none
+}
+
+sys icall handler periodic /Common/docurlbinary {
+  interval 3600
+  script /Common/docurlbinary
+}
+
+sys icall script docurlproxy {
+  app-service none
+  definition {
+
+      set DGGlobalHostAllow $str_config/~DGGlobalHostAllow~
+      set DGLinkIDhosts $str_config/~DGLinkIDhosts~
+
+      set storageToken [exec curl -s -H "Metadata: true" -H "Accept: application/json" -H "Content-Type: application/json" "http://169.254.169.254/metadata/identity/oauth2/token?api-version=2018-02-01&resource=https%3A%2F%2Fstorage.azure.com%2F" | jq --raw-output ".access_token"]
+      exec curl -s \$DGGlobalHostAllow -H "x-ms-version: 2017-11-09" -H "Authorization: Bearer \$storageToken" -o /var/tmp/DGGlobalHostAllow
+      tmsh::modify sys file data-group /Common/globalHostAllowDG separator ":=" source-path file:/var/tmp/DGGlobalHostAllow type string
+
+      exec curl -s \$DGLinkIDhosts -H "x-ms-version: 2017-11-09" -H "Authorization: Bearer \$storageToken" -o /var/tmp/DGLinkIDhosts
+      tmsh::modify sys file data-group /Common/linkIDhostsDG separator ":=" source-path file:/var/tmp/DGLinkIDhosts type string
+
+  }
+  description none
+  events none
+}
+
+sys icall handler periodic /Common/docurlproxy {
+  interval 3600
+  script /Common/docurlproxy
+}
+EOF
+
+  echo "$(date +%T) sed -i 's|~DGURLMapIpToPort~|$DGURLMapIpToPort|g' /tmp/dgscript"
+  sed -i "s|~DGURLMapIpToPort~|$DGURLMapIpToPort|g" /tmp/dgscript
+
+  echo "$(date +%T) sed -i 's|~DGURLIDToLinkId~|$DGURLIDToLinkId|g' /tmp/dgscript"
+  sed -i "s|~DGURLIDToLinkId~|$DGURLIDToLinkId|g" /tmp/dgscript
+
+  echo "$(date +%T) sed -i 's|~DGGlobalHostAllow~|$DGGlobalHostAllow|g' /tmp/dgscript"
+  sed -i "s|~DGGlobalHostAllow~|$DGGlobalHostAllow|g" /tmp/dgscript
+
+  echo "$(date +%T) sed -i 's|~DGLinkIDhosts~|$DGLinkIDhosts|g' /tmp/dgscript"
+  sed -i "s|~DGLinkIDhosts~|$DGLinkIDhosts|g" /tmp/dgscript
+
+  echo "$(date +%T) tmsh load /sys config merge file /tmp/dgscript"
+  tmsh load /sys config file /tmp/dgscript merge verify
+  if [[ $? == 0 ]]; then
+    tmsh load /sys config file /tmp/dgscript merge
+    echo "$(date +%T) *** Ending: DG Refresh job completed"
+  else
+    echo "$(date +%T) TMSH merge verification failed for '/tmp/dgscript'. Unable to load iCall elements."
+  fi
+}
+
+# download required configuration files
+download_files() {
+  echo "$(date +%T) *** Starting: Getting library files"
+  hdr1="x-ms-version: 2017-11-09"
+  hdr2="Authorization: Bearer $storageToken"
+
+  # files located at $str_bin
+  str_bin_files="F5_bastion_config-v4-retry-v2.json dns-eav3.sh cch.sh"
+  str_bin_files="$str_bin_files $bastionIruleFile $bastionRetryIruleFile"
+  str_bin_files="$str_bin_files $hostIdCheckIruleFile $hostIdCheckRetryIruleFile"
+  str_bin_files="$str_bin_files $genericProtoIruleFile $fqdnIruleFile $dgdumpIruleFile"
+  str_bin_files="$str_bin_files $connIruleFile"
+
+  # Download files located at $str_bin
+  for f in $str_bin_files; do
+    echo "$(date +%T) Downloading '$f' from storage account (str_bin)"
+    curl -s --connect-time 2 -H "$hdr1" -H "$hdr2" -O $str_bin/$f
+
+    until [[ -f $f ]]; do
+      echo "$(date +%T) '$f' download unsuccessful, trying again in $waitTime seconds"
+      sleep $waitTime
+      curl -s --connect-time 2 -H "$hdr1" -H "$hdr2" -O $str_bin/$f
+    done
+  done
+
+  # files located at $str_config
+  str_cfg_files="$DGURLMapIpToPort $DGURLIDToLinkId $DGGlobalHostAllow $DGLinkIDhosts"
+
+  # Download files located at $str_config
+  for f in $str_cfg_files; do
+    echo "$(date +%T) Downloading '$f' from storage account (str_config)"
+    curl -s --connect-time 2 -H "$hdr1" -H "$hdr2" -O $str_config/$f
+
+    until [[ -f $f ]]; do
+      echo "$(date +%T) '$f' download unsuccessful, trying again in $waitTime seconds"
+      sleep $waitTime
+      curl -s --connect-time 2 -H "$hdr1" -H "$hdr2" -O $str_config/$f
+    done
+  done
+
+  # Move files into their final destinations
+  echo "$(date +%T) mv F5_bastion_config-v4-retry-v2.json $pathToAs3"
+  mv F5_bastion_config-v4-retry-v2.json $pathToAs3; chmod 644 $pathToAs3
+
+  echo "$(date +%T) mv dns-eav3.sh $pathToDnsMonitor"
+  mv dns-eav3.sh $pathToDnsMonitor
+
+  echo "$(date +%T) chmod 755 cch.sh; mv cch.sh /tmp/cch.sh"
+  mv cch.sh /tmp/cch.sh; chmod 755 /tmp/cch.sh
+
+  echo "$(date +%T) mv $DGURLMapIpToPort $pathToMapPortToIPportDg"
+  mv $DGURLMapIpToPort $pathToMapPortToIPportDg
+
+  echo "$(date +%T) mv $DGURLIDToLinkId $pathToDstPortToLinkidDg"
+  mv $DGURLIDToLinkId $pathToDstPortToLinkidDg
+
+  echo "$(date +%T) mv $DGGlobalHostAllow $pathToGlobalHostAllowDg"
+  mv $DGGlobalHostAllow $pathToGlobalHostAllowDg
+
+  echo "$(date +%T) mv $DGLinkIDhosts $pathToLinkIDhostsDg"
+  mv $DGLinkIDhosts $pathToLinkIDhostsDg
+
+  echo "$(date +%T) mv $bastionIruleFile $pathToBastionIrule"
+  mv $bastionIruleFile $pathToBastionIrule
+
+  echo "$(date +%T) mv $bastionRetryIruleFile $pathToBastionRetryIrule"
+  mv $bastionRetryIruleFile $pathToBastionRetryIrule
+
+  echo "$(date +%T) mv $hostIdCheckIruleFile $pathToHostIdCheckIrule"
+  mv $hostIdCheckIruleFile $pathToHostIdCheckIrule
+
+  echo "$(date +%T) mv $hostIdCheckRetryIruleFile $pathToHostIdCheckRetryIrule"
+  mv $hostIdCheckRetryIruleFile $pathToHostIdCheckRetryIrule
+
+  echo "$(date +%T) mv $genericProtoIruleFile $pathToGenericProtoIrule"
+  mv $genericProtoIruleFile $pathToGenericProtoIrule
+
+  echo "$(date +%T) mv $fqdnIruleFile $pathToFqdnIrule"
+  mv $fqdnIruleFile $pathToFqdnIrule
+
+  echo "$(date +%T) mv $dgdumpIruleFile $pathToDgdumpIrule"
+  mv $dgdumpIruleFile $pathToDgdumpIrule
+
+  echo "$(date +%T) mv $connIruleFile $pathToConnIrule"
+  mv $connIruleFile $pathToConnIrule
+}
+
+# Base64-encode iRules for insertion into AS3 template
+mk_b64_irules() {
+  echo "$(date +%T) base64-decoding downloaded iRule templates"
+  bastionIruleBase64=$(cat $pathToBastionIrule | base64 -w0)
+  genericProtoIruleBase64=$(cat $pathToGenericProtoIrule | base64 -w0)
+  hostIdCheckIruleBase64=$(cat $pathToHostIdCheckIrule | base64 -w0)
+  bastionRetryIruleBase64=$(cat $pathToBastionRetryIrule | base64 -w0)
+  hostIdCheckRetryIruleBase64=$(cat $pathToHostIdCheckRetryIrule | base64 -w0)
+  fqdnIruleBase64=$(cat $pathToFqdnIrule | base64 -w0)
+  dgdumpIruleBase64=$(cat $pathToDgdumpIrule | base64 -w0)
+  connIruleBase64=$(cat $pathToConnIrule | base64 -w0)
+  echo "$(date +%T) iRule template base64-decode complete"
+}
+
+# Update AS3 config template with base64-encoded iRules
+update_as3_template() {
+  echo "$(date +%T) Updating iRule templates with local values"
+  sed -i "s|~$bastionIruleFile~|$bastionIruleBase64|g"                   $pathToAs3
+  sed -i "s|~$bastionRetryIruleFile~|$bastionRetryIruleBase64|g"         $pathToAs3
+  sed -i "s|~$genericProtoIruleFile~|$genericProtoIruleBase64|g"         $pathToAs3
+
+  sed -i "s|~$hostIdCheckIruleFile~|$hostIdCheckIruleBase64|g"           $pathToAs3
+  sed -i "s|~$hostIdCheckRetryIruleFile~|$hostIdCheckRetryIruleBase64|g" $pathToAs3
+  sed -i "s|~$fqdnIruleFile~|$fqdnIruleBase64|g"                         $pathToAs3
+
+  sed -i "s|~$dgdumpIruleFile~|$dgdumpIruleBase64|g"                     $pathToAs3
+  sed -i "s|~$connIruleFile~|$connIruleBase64|g"                         $pathToAs3
+  echo "$(date +%T) iRule template update complete"
+}
+
+
+# Create the objects referenced within the AS3 configuration.
+# Including this in the vmss_init script in case any of these objects are 
+# location or region dependednt.
+create_as3_dependencies() {
+  echo "$(date +%T) Creating pre-AS3 config objects"
+
+  tmsh create sys file external-monitor dnspoolupdater source-path file://$pathToDnsMonitor
+  echo "$(date +%T) tmsh create sys file external-monitor dnspoolupdater source-path file://$pathToDnsMonitor"
+  tmsh create sys file data-group mapPortToIPport type string source-path file://$pathToMapPortToIPportDg
+  echo "$(date +%T) tmsh create sys file data-group mapPortToIPport type string source-path file://$pathToMapPortToIPportDg"
+  tmsh create sys file data-group dstPortToLinkidDG type string source-path file://$pathToDstPortToLinkidDg
+  echo "$(date +%T) tmsh create sys file data-group dstPortToLinkidDG type string source-path file://$pathToDstPortToLinkidDg"
+  tmsh create sys file data-group globalHostAllowDG type string source-path file://$pathToGlobalHostAllowDg
+  echo "$(date +%T) tmsh create sys file data-group linkIDhostsDG type string source-path file://$pathToLinkIDhostsDg"
+  tmsh create sys file data-group linkIDhostsDG type string source-path file://$pathToLinkIDhostsDg
+
+  NC="net dns-resolver proxyDNSresolver-retry { route-domain 0 use-ipv6 no forward-zones { . { nameservers {"
+  for ns in $(echo $dns | sed 's#|##g; s#\.##; s#,# #'); do
+    NC="$NC $ns {}"
+  done
+  NC="$NC }}}}"
+
+  echo "$NC" > $preAS3objects
+  echo "net dns-resolver proxyDNSresolver { forward-zones { . { nameservers { 203.0.113.5:domain { }}}} route-domain 0 use-ipv6 no}" >> $preAS3objects
+  echo "net tunnels tunnel proxyTunnel { profile tcp-forward }" >> $preAS3objects
+
+  echo "$(date +%T) Merging pre-AS3 objects into running config"
+  tmsh load sys config file $preAS3objects merge verify
+  if [[ $? == 0 ]]; then
+    tmsh load sys config file $preAS3objects merge
+  else
+    echo "$(date +%T) ERROR: file $perAS3objects failed validation"
+    echo "$(date +%T) tmsh load sys config file $preAS3objects merge verify"
+
+  fi
+}
+
+
+##################################
+## End of Configuration Functions
+##################################
+
+
+
+# Get tokens to access the storage account and key vault
+get_storage_token
+get_vault_token
+
+
+echo "$(date +%T) Getting IP address from metadata"
+ipAddress=$(get_ip_address)
+echo "$(date +%T) Got IP address: $ipAddress"
+
+echo "$(date +%T) Getting location from metadata"
+location=$(get_location)
+echo "$(date +%T) Got location: $location"
+
+echo "$(date +%T) Generating instanceName"
+instanceName=$(mk_instance_name)
+echo "$(date +%T) Generated instanceName: $instanceName"
+
+# Get Admin Password and Certificate from Vault 
+get_admin_password
+CREDS=$apiUser:$adminPasswordOrKey
+
+# Download required files
+# For VMSS instances this means iRules, scripts, and other active-configuration elements
+download_files
+
+# Prepare iRule files for use within AS3 template
+mk_b64_rules
+
+# Update the AS3 template with the base64-encoded iRules
+update_as3_template
+
+# call wait_for_active() to ensure all services are actually ready for iApp pkg installation
+wait_for_active
+
+# Set instance hostname
+tmsh modify sys global-settings hostname $instanceName
+#
+# Add remote_hosts
+add_remote_hosts
+
+# Submit telemetry-streaming configuration
+submit_ts_config
+
+
+# Create data-group refesh iCall script and handler
+create_dgrefresh_icall
+
+# Create objects required by AS3 configuration.
+# These include the DNS resolvers, DNS monitor, and various data-groups
+create_as3_dependencies
+
+
+echo "$(date +%T) bash /config/cloud/deploy_app.sh -o $pathToAs3 -u $apiUser -p <pass>"
+bash /config/cloud/deploy_app.sh -o $pathToAs3 -u $apiUser -p $adminPasswordOrKey;
+echo "$(date +%T) *** Ending: App deployment completed ... "
+
+# Integrate with CCH 
+echo "$(date +%T) Running /tmp/cch.sh"
+/tmp/cch.sh $location ${cch}
+echo "$(date +%T) Completed /tmp/cch.sh"
+
+save_config
+
+
+echo "$(date +%T) onboarding script fully complete"

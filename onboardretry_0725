@@ -1,0 +1,1012 @@
+#!/bin/bash
+
+verifyHash='Y2xpIHNjcmlwdCAvQ29tbW9uL3ZlcmlmeUhhc2gge1xucHJvYyBzY3JpcHQ6OnJ1biB7fSB7XG4gICAgICAgIGlmIHtbY2F0Y2gge1xuICAgICAgICAgICAgc2V0IGhhc2hlcyhmNS1jbG91ZC1saWJzLnRhci5neikgYWRjZmEwNmMxOGQyNmMwOTIyYWQxNDFhZDMxYjliNjIxZjNlMTcxM2EyMWZiODE5ZjBiM2I0MjUxMTI5NjQ5NjcxNzI3MTAwMzVmOTdkMGZiOWRmY2RlZDgxMGFlMzI4MGY0NjZkNGI1MWJmNWExMDlhZTg0YmMzNTQyMTcwNjFcbiAgICAgICAgICAgIHNldCBoYXNoZXMoZjUtY2xvdWQtbGlicy1hd3MudGFyLmd6KSAyYjkzNDMwNzQ3N2ZhZjc3MmUxNTU4YWIzNjM2NzE2OTgxMjE1ZDZiMTVmMmExODQ3NTA0NzM5MTFkMWQzOGJmYmQ2YTJkYzc5NjE0YjFkMTU3NWRjZThmMzgyNGVkODA1ZGFhM2Q5Y2E0OGM3ZTk0YzY2OTJmMDNiOWU0ZWQ3YVxuICAgICAgICAgICAgc2V0IGhhc2hlcyhmNS1jbG91ZC1saWJzLWF6dXJlLnRhci5neikgM2VjZDhmMzczNzE0YTc0ZTIzOWY4YmY2YjI1MWJjMjEyYjhhZWUxYzAzMWQzZTljMDZkYTMwNGIwMWVmNmE3MTVlMDQxNTMyOGY1NTIzYmQzYTFiZWE4ZWViODUzYjI0MDFiNzRmOTA0YmY4OGI3YWJjZDQ4ZDQ1ODRhMDBkYmRcbiAgICAgICAgICAgIHNldCBoYXNoZXMoZjUtY2xvdWQtbGlicy1nY2UudGFyLmd6KSA2M2I1YzJhNTFjYTA5YzQzYmQ4OWFmMzc3M2JiYWI4N2M3MWE2ZTdmNmFkOTQxMGIyMjliNGUwYTFjNDgzZDQ2ZjFhOWZmZjM5ZDk5NDQwNDFiMDJlZTkyNjA3MjQwMjc0MTRkZTU5MmU5OWY0YzI0NzU0MTUzMjNlMThhNzJlMFxuICAgICAgICAgICAgc2V0IGhhc2hlcyhmNS5odHRwLnYxLjIuMHJjNC50bXBsKSA0N2MxOWE4M2ViZmM3YmQxZTllOWMzNWYzNDI0OTQ1ZWY4Njk0YWE0MzdlZWRkMTdiNmEzODc3ODhkNGRiMTM5NmZlZmU0NDUxOTliNDk3MDY0ZDc2OTY3YjBkNTAyMzgxNTQxOTBjYTBiZDczOTQxMjk4ZmMyNTdkZjRkYzAzNFxuICAgICAgICAgICAgc2V0IGhhc2hlcyhmNS5odHRwLnYxLjIuMHJjNi50bXBsKSA4MTFiMTRiZmZhYWI1ZWQwMzY1ZjAxMDZiYjVjZTVlNGVjMjIzODU2NTVlYTNhYzA0ZGUyYTM5YmQ5OTQ0ZjUxZTM3MTQ2MTlkYWU3Y2E0MzY2MmM5NTZiNTIxMjIyODg1OGYwNTkyNjcyYTI1NzlkNGE4Nzc2OTE4NmUyY2JmZVxuICAgICAgICAgICAgc2V0IGhhc2hlcyhmNS5odHRwLnYxLjIuMHJjNy50bXBsKSA2NGEwZWQzYjVlMzJhMDM3YmE0ZTcxZDQ2MDM4NWZlOGI1ZTFhZWNjMjdkYzBlODUxNGI1MTE4NjM5NTJlNDE5YTg5ZjRhMmE0MzMyNmFiYjU0M2JiYTliYzM0Mzc2YWZhMTE0Y2VkYTk1MGQyYzNiZDA4ZGFiNzM1ZmY1YWQyMFxuICAgICAgICAgICAgc2V0IGhhc2hlcyhmNS1hcHBzdmNzLTMuMTkuMC00Lm5vYXJjaC5ycG0pIGEzZTg0NjVkMjUxZDE0Nzg2MWU4MjY5ZmIwODUwZmRiZGU1ODYyNmY1OGI5OTU3Y2RhZDJkNWI0YTc1YTUyNDc1NjVjMGQwODZlODEwNjllN2FhYzk3OWNjYTU0OGY5OTlhNjNmODBhMjdhNDgwODc5ZDZkNTk5YzE0OGM1MjVlXG5cbiAgICAgICAgICAgIHNldCBmaWxlX3BhdGggW2xpbmRleCAkdG1zaDo6YXJndiAxXVxuICAgICAgICAgICAgc2V0IGZpbGVfbmFtZSBbZmlsZSB0YWlsICRmaWxlX3BhdGhdXG5cbiAgICAgICAgICAgIGlmIHshW2luZm8gZXhpc3RzIGhhc2hlcygkZmlsZV9uYW1lKV19IHtcbiAgICAgICAgICAgICAgICB0bXNoOjpsb2cgZXJyICJObyBoYXNoIGZvdW5kIGZvciAkZmlsZV9uYW1lIlxuICAgICAgICAgICAgICAgIGV4aXQgMVxuICAgICAgICAgICAgfVxuXG4gICAgICAgICAgICBzZXQgZXhwZWN0ZWRfaGFzaCAkaGFzaGVzKCRmaWxlX25hbWUpXG4gICAgICAgICAgICBzZXQgY29tcHV0ZWRfaGFzaCBbbGluZGV4IFtleGVjIC91c3IvYmluL29wZW5zc2wgZGdzdCAtciAtc2hhNTEyICRmaWxlX3BhdGhdIDBdXG4gICAgICAgICAgICBpZiB7ICRleHBlY3RlZF9oYXNoIGVxICRjb21wdXRlZF9oYXNoIH0ge1xuICAgICAgICAgICAgICAgIGV4aXQgMFxuICAgICAgICAgICAgfVxuICAgICAgICAgICAgdG1zaDo6bG9nIGVyciAiSGFzaCBkb2VzIG5vdCBtYXRjaCBmb3IgJGZpbGVfcGF0aCJcbiAgICAgICAgICAgIGV4aXQgMVxuICAgICAgICB9XX0ge1xuICAgICAgICAgICAgdG1zaDo6bG9nIGVyciB7VW5leHBlY3RlZCBlcnJvciBpbiB2ZXJpZnlIYXNofVxuICAgICAgICAgICAgZXhpdCAxXG4gICAgICAgIH1cbiAgICB9XG4gICAgXG59'
+                                                                                                   
+installCloudLibs='IyEvYmluL2Jhc2gKZWNobyBhYm91dCB0byBleGVjdXRlCmNoZWNrcz0wCgp3aGlsZSBbICRjaGVja3MgLWx0IDEyMCBdOyBkbwogIGVjaG8gIiQoZGF0ZSArJVQpICgkMCkgY2hlY2tpbmcgbWNwZCIKICAvdXNyL2Jpbi90bXNoIC1hIHNob3cgc3lzIG1jcC1zdGF0ZSBmaWVsZC1mbXQgfCBncmVwIC1xIHJ1bm5pbmcKICBpZiBbICQ/ID09IDAgXTsgdGhlbgogICAgZWNobyAiJChkYXRlICslVCkgKCQwKSBtY3BkIHJlYWR5IgogICAgYnJlYWsKICBmaQoKICBlY2hvICIkKGRhdGUgKyVUKSAoJDApIG1jcGQgbm90IHJlYWR5IHlldCIKICBsZXQgY2hlY2tzPWNoZWNrcysxCiAgc2xlZXAgMQpkb25lCgoKZWNobyAiJChkYXRlICslVCkgKCQwKSBsb2FkaW5nIHZlcmlmeUhhc2ggc2NyaXB0IgovdXNyL2Jpbi90bXNoIGxvYWQgc3lzIGNvbmZpZyBtZXJnZSBmaWxlIC9jb25maWcvdmVyaWZ5SGFzaAoKaWYgWyAkPyAhPSAwIF07IHRoZW4KICBlY2hvICIkKGRhdGUgKyVUKSAoJDApIGNhbm5vdCB2YWxpZGF0ZSBzaWduYXR1cmUgb2YgL2NvbmZpZy92ZXJpZnlIYXNoIgogIGV4aXQgMQpmaQplY2hvICIkKGRhdGUgKyVUKSAoJDApIGxvYWRlZCB2ZXJpZnlIYXNoIgoKY29uZmlnX2xvYz0iL2NvbmZpZy9jbG91ZC8iCmhhc2hlZF9maWxlX2xpc3Q9Ii9jb25maWcvY2xvdWQvZjUtY2xvdWQtbGlicy50YXIuZ3ogZjUtYXBwc3Zjcy0zLjE5LjAtNC5ub2FyY2gucnBtIgpmb3IgZmlsZSBpbiAkaGFzaGVkX2ZpbGVfbGlzdDsgZG8KICBlY2hvICIkKGRhdGUgKyVUKSAoJDApIHZlcmlmeWluZyAkZmlsZSIKICAvdXNyL2Jpbi90bXNoIHJ1biBjbGkgc2NyaXB0IHZlcmlmeUhhc2ggJGZpbGUKICBpZiBbICQ/ICE9IDAgXTsgdGhlbgogICAgZWNobyAiJGZpbGUgaXMgbm90IHZhbGlkIgogICAgZXhpdCAxCiAgZmkKICBlY2hvICIkKGRhdGUgKyVUKSAoJDApIHZlcmlmaWVkICRmaWxlIgpkb25lCgplY2hvICIkKGRhdGUgKyVUKSAoJDApIGV4cGFuZGluZyAkaGFzaGVkX2ZpbGVfbGlzdCIKdGFyIHhmeiAvY29uZmlnL2Nsb3VkL2Y1LWNsb3VkLWxpYnMudGFyLmd6IC0td2FybmluZz1uby11bmtub3duLWtleXdvcmQgLUMgL2NvbmZpZy9jbG91ZC9henVyZS9ub2RlX21vZHVsZXMvQGY1ZGV2Y2VudHJhbAp0b3VjaCAvY29uZmlnL2Nsb3VkL2Nsb3VkTGlic1JlYWR5Cg=='
+
+appScript='IyEvYmluL2Jhc2gKCndoaWxlIGdldG9wdHMgbzp1OnA6IG9wdGlvbgpkbyBjYXNlICIkb3B0aW9uIiAgaW4KICAgICAgICBvKSBkZWNsYXJhdGlvblVybD0kT1BUQVJHOzsKICAgICAgICB1KSB1c2VyPSRPUFRBUkc7OwoJcCkgcGFzc3dkPSRPUFRBUkc7OwogICAgZXNhYwpkb25lCgpkZXBsb3llZD0ibm8iCmZpbGVfbG9jPSRkZWNsYXJhdGlvblVybApkZmxfbWdtdF9wb3J0PWB0bXNoIGxpc3Qgc3lzIGh0dHBkIHNzbC1wb3J0IHwgZ3JlcCBzc2wtcG9ydCB8IHNlZCAncy9zc2wtcG9ydCAvLztzLyAvL2cnYAphczN1cmw9Imh0dHBzOi8vbG9jYWxob3N0OiRkZmxfbWdtdF9wb3J0L21nbXQvc2hhcmVkL2FwcHN2Y3MvZGVjbGFyZSIKCmVjaG8gIiQoZGF0ZSArJVQpIFByb2Nlc3NpbmcgQVMzIEN1c3RvbSBjb25maWciCmNmZ1N0YXR1cz0kKGNhdCAkZmlsZV9sb2MgfCBqcSAtciAuY2xhc3MpCmVjaG8gIiQoZGF0ZSArJVQpIENoZWNraW5nIGZvciB2YWxpZCBBUzMgZGVjbGFyYXRpb246ICgkY2ZnU3RhdHVzKSIKCmlmIFtbICRjZmdTdGF0dXMgPT0gIkFTMyIgXV07IHRoZW4KICAgICBTVEFUVVM9JChjdXJsIC1Jc2t1ICR1c2VyOiRwYXNzd2QgLVggR0VUICRhczN1cmwgfCBncmVwIEhUVFApCiAgICAgZWNobyAiJChkYXRlICslVCkgSW5pdGlhbCBPdXRwdXQgUmV0dXJuQ29kZTogJFNUQVRVUyIKICAgICBhczNFcnJvcj0xCiAgICAgcG9zdFN0YXR1cz0iIgoKICAgICBmb3IgKCggQ05UPTA7ICRDTlQgPCAzMDsgQ05UKysgKSk7IGRvCiAgICAgICAjIFNlbmQgQVMzIERlY2xhcmF0aW9uCiAgICAgICBlY2hvICIkKGRhdGUgKyVUKSBTZW5kaW5nIEFTMyBEZWNsYXJhdGlvbiIKICAgICAgIGN1cmwgLXNrdSAkdXNlcjokcGFzc3dkIC1YIFBPU1QgLUggIkNvbnRlbnQtVHlwZTogYXBwbGljYXRpb24vanNvbiIgJGFzM3VybCAtZCBAJGZpbGVfbG9jIC1vIC9jb25maWcvY2xvdWQvYXMzX3Rhc2tfb3V0Lmpzb24KICAgICAKICAgICAgIHBvc3RTdGF0dXM9JChjYXQgL2NvbmZpZy9jbG91ZC9hczNfdGFza19vdXQuanNvbiB8IGpxIC1yICcucmVzdWx0c1tdLmNvZGUnIDI+L2Rldi9udWxsKQogICAgICAgaWYgW1sgJD8gLW5lIDAgXV07IHRoZW4KICAgICAgICAgIHBvc3RTdGF0dXM9JChjYXQgL2NvbmZpZy9jbG91ZC9hczNfdGFza19vdXQuanNvbiB8IGpxIC1yICcuY29kZScgMj4vZGV2L251bGwpCiAgICAgICBmaQogICAgICAgaWYgKCggJHtwb3N0U3RhdHVzOi0wMDAwfSA+PSAyMDAgJiYgJHtwb3N0U3RhdHVzOi0wMDAwfSA8PSAyOTkgKSk7IHRoZW4KICAgICAgICAgZWNobyAiJChkYXRlICslVCkgQVMzIERlY2xhcmF0aW9uIHNlbnQgc3VjY2Vzc2Z1bGx5IgogICAgICAgICBhczNFcnJvcj0wCiAgICAgICAgIGJyZWFrCiAgICAgICBlbGlmICgoICR7cG9zdFN0YXR1czotMDAwMH0gPj0gNDAwICYmICR7cG9zdFN0YXR1czotMDAwMH0gPCA1MDAgKSk7IHRoZW4KICAgICAgICAgbXNnPSQoY2F0IC9jb25maWcvY2xvdWQvYXMzX3Rhc2tfb3V0Lmpzb24gfCBqcSAtciAnLm1lc3NhZ2UnKSAKICAgICAgICAgZWNobyAiJChkYXRlICslVCkgQVMzIFVOUkVDT1ZFUkFCTEUgRVJST1I6ICgkcG9zdFN0YXR1cykgJyRtc2cnIgogICAgICAgICBleGl0IDEKICAgICAgIGVsaWYgKCggJHtwb3N0U3RhdHVzOi0wMDAwfSA+PSA1MDAgKSk7IHRoZW4KICAgICAgICAgZWNobyAiJChkYXRlICslVCkgQVMzIGVycm9yIGNvZGU6ICRwb3N0U3RhdHVzLCByZXRyeWluZyIKICAgICAgICAgc2xlZXAgMgogICAgICAgZWxzZQogICAgICAgICBlY2hvICIkKGRhdGUgKyVUKSBBUzMgRGVjbGFyYXRpb24gZmFpbGVkIChjb2RlOiAkcG9zdFN0YXR1cyksIHJldHJ5aW5nIgogICAgICAgICBzbGVlcCAyCiAgICAgICBmaQogICAgIGRvbmUKCiAgICAgIyBFeGl0IHRoaXMgc2NyaXB0IGlmIHRoZSBBUzMgZGVjbGFyYXRpb24gaGFzIGZhaWxlZAogICAgIGlmICgoICRhczNFcnJvciA9PSAxICkpOyB0aGVuCgllY2hvICIkKGRhdGUgKyVUKSBBUzMgcmVwb3J0cyBlcnJvciBpbiBkZWNsYXJhdGlvbi4gKENvZGU6ICRwb3N0U3RhdHVzKSIgIAogICAgICAgIGVjaG8gIiQoZGF0ZSArJVQpIEFTMyBEZXBsb3ltZW50IEZBSUxFRDsgbm90IGNvbnRpbnVpbmciCiAgICAgICAgZXhpdAogICAgIGZpCiAgIAogICAgICBhczNUYXNrSWQ9JChjYXQgL2NvbmZpZy9jbG91ZC9hczNfdGFza19vdXQuanNvbiB8IGpxIC1yICcuZGVjbGFyYXRpb24uaWQnKQogICAgICBlY2hvICIkKGRhdGUgKyVUKSBjdXJsIC1za3UgJHVzZXI6PHBhc3M+ICRhczN1cmwvJGFzM1Rhc2tJZCIKICAgICAgZm9yICgoIENOVD0wOyAkQ05UIDwgMzA7IENOVCsrICkpOyBkbwogICAgICAgICBDT0RFPSQoY3VybCAtSXNrdSAkdXNlcjokcGFzc3dkIC1YIEdFVCAkYXMzdXJsIHwgYXdrICcvSFRUUC8geyBwcmludCAkMiB9JykKCiAgICAgICAgIGVjaG8gIiQoZGF0ZSArJVQpIENPREU6ICRDT0RFIgogICAgICAgICBpZiAoKCAke0NPREU6LTAwMDB9ID09IDIwMCApKTsgdGhlbgogICAgICAgICAgICAgZWNobyAiJChkYXRlICslVCkgQ29kZTogMjAwLCBBUzMgaXMgUmVhZHkhIgogICAgICAgICAgICAgYnJlYWsKICAgICAgICAgZWxpZiAoKCAke0NPREU6LTAwMDB9ID09IDIwMiApKTsgdGhlbgogICAgICAgICAgICAgZWNobyAiJChkYXRlICslVCkgQ29kZTogJENPREUgIEFTMyBOb3QgZG9uZSB5ZXQuLi4iCiAgICAgICAgIGVsaWYgKCggJHtDT0RFOi0wMDAwfSA9PSAyMDQgKSk7IHRoZW4KICAgICAgICAgICAgIGVjaG8gIiQoZGF0ZSArJVQpIENvZGU6ICRDT0RFOiBBUzMgRXhwZXJpZW5jZWQgYW4gZXJyb3IgKG5vIGNvbnRlbnQgaW4gcmVzcG9uc2UpLiBPdXRwdXQgc3RhdHVzIGxvY2F0ZWQgaW4gL2NvbmZpZy9jbG91ZC9hczNfdGFza19vdXQuanNvbiIKICAgICAgICAgICAgIGJyZWFrCiAgICAgICAgIGVsaWYgKCggJHtDT0RFOi0wMDAwfSA+PSA0MDAgKSk7IHRoZW4KICAgICAgICAgICAgIGVjaG8gIiQoZGF0ZSArJVQpIEVSUk9SOiBBUzMgRGVjbGFyYXRpb24gRkFJTEVEIHdpdGggY29kZTogJENPREUiCiAgICAgICAgICAgICBicmVhawogICAgICAgICBlbGlmICgoICR7Q09ERTotMDAwMH0gPT0gMDAwMCApKTsgdGhlbgogICAgICAgICAgICAgZWNobyAiJChkYXRlICslVCkgV2FybmluZzogQVMzIGRlcGxveW1lbnQgc3RhdHVzIGNvZGUgZW1wdHk7IHJldHJ5aW5nLi4uIChOb3RoaW5nIHRvIHdvcnJ5IGFib3V0IHVubGVzcyBpdCByZW1haW5zIHRoaXMgd2F5LikiCiAgICAgICAgIGVsc2UKICAgICAgICAgICAgIGVjaG8gIiQoZGF0ZSArJVQpIFdBUk5JTkc6IChQb3NzaWJsZSBlcnJvcik6IEFTMyBEZXNjbGFyYXRpb24gc3RhdHVzIHVua25vd247IGNvbnRpbnVpbmcgdG8gcmV0cnkiCiAgICAgICAgIGZpCiAgICAgICAgc2xlZXAgMgogICAgICBkb25lCmVsc2UKICAgIGVjaG8gIkN1c3RvbSBjb25maWcgd2FzIG5vdCB2YWxpZCBKU09OLCBBUzMgY29uZmlndXJhdGlvbiBOT1QgQVBQTElFRCIKZmkKCg=='
+
+################################################################################################
+# Set Your Environment Variable here 
+################################################################################################
+
+# Log Analytics Workspace ID and key
+#
+workspaceId='${workspaceId}'
+cipherText='${cipherText}'
+
+# Get Storage Account Name and PLE IP Address for /etc/hosts
+str_name='${storage_name}'
+strurl="https://$str_name.blob.core.windows.net/nvaconfig"
+str_bin="https://$str_name.blob.core.windows.net/nva-software-v2"
+str_config="https://$str_name.blob.core.windows.net/nvaconfig"
+str_do="https://$str_name.blob.core.windows.net/declarative-onboarding"
+str_images="https://$str_name.blob.core.windows.net/f5-hotfix"
+prefix='${prefix}'
+dns='${dns}'
+
+# Get Key Vault URL Here
+kv='${vault}'
+kvurl="https://$kv.vault.azure.net"
+
+# External data-group files for use by iRules
+DGGlobalHostAllow="${map1_file}"
+DGLinkIDhosts="${map2_file}"
+DGURLMapIpToPort="${map3_file}"
+DGURLIDToLinkId="${map4_file}"
+
+bigIpMgmtPort=8443
+localIpAddress="127.0.0.1:$bigIpMgmtPort"
+
+# iApp packages to be installed
+DO_rpm="f5-declarative-onboarding-1.29.0-8.noarch.rpm"
+AS3_rpm="f5-appsvcs-3.19.0-4.noarch.rpm"
+TS_rpm="f5-telemetry-1.22.0-1.noarch.rpm"
+
+pathToMapPortToIPportDg="/tmp/mapPortToIPportDg.txt"
+pathToDstPortToLinkidDg="/tmp/dstPortToLinkidDg.txt"
+pathToGlobalHostAllowDg="/tmp/globalHostAllowDg.txt"
+pathToLinkIDhostsDg="/tmp/linkIDhostsDg.txt"
+pathToDnsMonitor="/tmp/dnsmonitor.txt"
+pathToAs3="/tmp/custom_config"
+
+# image_* vars for specifying an upgrade image at boot time
+imageBase='${imageBase}'
+imageHotfix='${imageHotfix}'
+
+################################################
+# Get irule files
+################################################
+bastionIruleFile="proxy-protocol-v2-bastionIrule2.tcl"
+bastionRetryIruleFile="proxy-protocol-v2-bastionIrule2-retry.tcl"
+hostIdCheckIruleFile="proxy-protocol-v2-hostIDCheck.tcl"
+hostIdCheckRetryIruleFile="proxy-protocol-v2-hostIDCheck-retry.tcl"
+genericProtoIruleFile="proxy-protocol-v2-proxy-v2-reader-genericproto2.tcl"
+fqdnIruleFile="proxy-protocol-v2-proxyV2reader-fqdn.tcl"
+dgdumpIruleFile="dgdump.tcl"
+connIruleFile="conn-checker.tcl"
+
+pathToBastionIrule="/tmp/$bastionIruleFile"
+pathToBastionRetryIrule="/tmp/$bastionRetryIruleFile"
+pathToHostIdCheckIrule="/tmp/$hostIdCheckIruleFile"
+pathToHostIdCheckRetryIrule="/tmp/$hostIdCheckRetryIruleFile"
+pathToGenericProtoIrule="/tmp/$genericProtoIruleFile"
+pathToFqdnIrule="/tmp/$fqdnIruleFile"
+pathToDgdumpIrule="/tmp/$dgdumpIruleFile"
+pathToConnIrule="/tmp/$connIruleFile"
+pathToImages="/shared/images"
+preAS3objects="/shared/cloud_init/preAS3objects.conf"
+
+# Define NTP servers and timezone
+ntpServer="0.pool.ntp.org"
+timeZone="UTC"
+# Variables to be populated later
+#instanceName=""
+bigIpModules='"ltm":"nominal"'
+
+# Create/Add User to it can make API call
+apiUser=attadmin
+
+# Wait time before retrying failed downloads
+# This is also used in loops requiring an execution delay. Modify with care.
+waitTime=2
+loopLimit=30
+workdir="/shared/cloud_init"
+
+source /usr/lib/bigstart/bigip-ready-functions
+
+#################################################################################################
+## Utility Functions
+#################################################################################################
+### debug preparation
+mk_workdir() {
+  ## copy script to easy location for debugging
+  if [[ ! -d $workdir ]]; then
+    echo "$(date +%T) Creating directory /shared/cloud_init"
+    mkdir /shared/cloud_init
+  fi
+
+  if [[ ! -f $workdir/cloud_init_script.bash ]]; then
+    echo "$(date +%T) cp $0 $cfg_dir/cloud_init_script.bash && chmod 755 $cfg_dir/cloud_init_script.bash"
+    cp $0 /shared/cloud_init/cloud_init_script.bash && chmod 755 /shared/cloud_init/cloud_init_script.bash
+  fi
+}
+
+# Get the instance IP address from metadata (unnecessary with a single-nic deployment)
+get_ip_address() {
+  ipAddress=$(curl -s -H Metadata:true "http://169.254.169.254/metadata/instance/network/interface/0/ipv4/ipAddress/0/privateIpAddress?api-version=2017-08-01&format=text")
+  echo $ipAddress
+}
+
+# Get Azure location
+get_location() {
+  location=$(curl -s -H Metadata:true "http://169.254.169.254/metadata/instance/compute?api-version=2019-03-11" | grep -o -E "\"location\":\"[a-zA-Z0-9]+\"" | awk -F\: '{print $2}' | tr -d '"')
+  echo $location
+}
+
+
+# Create an instance name
+mk_instance_name() {
+  instanceName="${nrd}-f5$(( $RANDOM % 1000 )).$location.cloudapp.azure.com"
+  echo $instanceName
+}
+
+# Bash function to make sure BIG-IP is ready before proceeding with configuration.
+# Mainly for use following the DO_rpm submission
+wait_for_do_config_complete() {
+  limit=$loopLimit
+  count=0
+  url="https://$localIpAddress/mgmt/shared/declarative-onboarding"
+  header="content-type: application/json"
+  while true; do
+    code=$(curl -sku $CREDS -H "$header" $url -o $workdir/wait_for_do.out.json -w '%%{http_code}')
+    if (( $${code:-0000} == 200 )); then
+      echo "$(date +%T) ($${FUNCNAME[0]}): DO status good; proceeding with cloud-init"
+      return
+    elif (( $${code:-0000} == 202 )); then
+      echo "$(date +%T) ($${FUNCNAME[0]}): DO status: $code, continuing to wait..."
+    else
+      echo "$(date +%T) ($${FUNCNAME[0]}): Unknown result code ('$code'), Check '$workdir/wait_for_do.out.json' for output details"
+    fi
+
+    if (( $count >= $limit )); then
+      echo "$(date +%T) ($${FUNCNAME[0]}): DO wait period exceeded, returning"
+      return
+    else
+      ((count++))
+      sleep $waitTime
+    fi
+  done
+}
+
+# Wait for TMM services to be fully prepared
+wait_for_active() {
+  echo "$(date +%T) ($${FUNCNAME[0]}): Waiting for services to become available"
+  good="Active"
+  while true; do
+    status=$(cat /var/prompt/ps1)
+    if [[ $status =~ $good ]]; then
+      # TMM-adjacent services are ready
+      break
+    fi
+  done
+  echo "$(date +%T) ($${FUNCNAME[0]}): Status is $status, proceeding with cloud-init"
+}
+
+# Get storage token
+get_storage_token() {
+  echo "$(date +%T) Retrieving storageToken"
+  limit=$loopLimit
+  storageToken=""
+  
+  headers='Metadata: true'
+  tokenUrl='http://169.254.169.254/metadata/identity/oauth2/token?api-version=2018-02-01&resource=https://storage.azure.com'
+
+  for (( c=0; c < $limit; c++ )); do
+    storageToken=$(curl -sH "$headers" $tokenUrl | jq -r ".access_token")
+    if [[ -n $storageToken ]]; then
+      echo "$(date +%T) Successfully retrieved \$storageToken"
+      break
+    else
+      echo "$(date +%T) storageToken request failed; retrying in $waitTime second(s)"
+      sleep $waitTime
+    fi
+  done
+}
+
+# Get storage token
+get_vault_token() {
+  echo "$(date +%T) Retrieving KeyVaultToken"
+  limit=$loopLimit
+
+  headers='Metadata: true'
+  tokenUrl="http://169.254.169.254/metadata/identity/oauth2/token?api-version=2018-02-01&resource=https://vault.azure.net"
+
+  for (( c=0; c < $limit; c++ )); do
+    KeyVaultToken=$(curl -sH "$headers" $tokenUrl | jq -r ".access_token")
+    if [[ -n $KeyVaultToken ]]; then
+      echo "$(date +%T) KeyVaultToken retreived successfully"
+      break
+    else
+      echo "$(date +%T) KeyVaultToken request failed; retrying in $waitTime second(s)"
+      sleep $waitTime
+    fi
+  done
+}
+
+# Get admin user password (or key)
+get_admin_password() {
+  echo "$(date +%T) Retrieving adminPasswordOrKey"
+  limit=$loopLimit
+
+  headers="Authorization: Bearer $KeyVaultToken"
+  #echo "$(date +%T) curl -H 'Authorization: Bearer $KeyVaultToken' $kvurl/secrets/nva-secret?api-version=2016-10-01 |jq -r .value"                                                                
+  for (( c=0; c < $limit; c++)); do
+    adminPasswordOrKey=$(curl -sH "$headers" $kvurl/secrets/nva-secret?api-version=2016-10-01 | jq -r .value)
+    
+    if [[ -n $adminPasswordOrKey ]]; then
+      echo "$(date +%T) adminPassswordOrKey retreived successfully"
+      break
+    else
+      echo "$(date +%T) adminPassswordOrKey request failed; retrying in $waitTime second(s)"
+      sleep $waitTime
+    fi
+  done
+}
+
+# Save the config and write a couple messages to allow for easier timimg
+save_config() {
+  echo "$(date +%T) ($${FUNCNAME[0]}): Saving configuration"
+  tmsh save sys config
+  echo "$(date +%T)  ($${FUNCNAME[0]}): Completed config save"
+}
+#################################################################################################
+## End of Utility Functions
+#################################################################################################
+
+#################################################################################################
+## Configuration Functions
+#################################################################################################
+# Install iApp packages, verify installation command accepted, and monitor for installation completion
+# This function will attempt to install all three of the required iApp packages
+# No arguments
+install_iapp_pkgs() {
+  iAppInstallUrl="https://$localIpAddress/mgmt/shared/iapp/package-management-tasks"
+  limit=$loopLimit   # total time limie will be $limit * $waitTime
+
+  for pkg in $DO_rpm $AS3_rpm $TS_rpm; do
+    pkgStatus=0
+    if [[ ! -f $pkg ]]; then
+      echo "$(date +%T) ($${FUNCNAME[0]}): $pkg file not found, skipping package install"
+      continue
+    else
+      # Move iApp package to /var/config/rest/downloads
+      mv $pkg /var/config/rest/downloads
+    fi
+
+    echo "$(date +%T) Installing iApp package $pkg"
+
+    # identify service
+    service=$(echo $pkg | cut -d '-' -f 2)
+    if [[ $service =~ "declarative" ]]; then service="declarative-onboarding"; fi
+    
+    # Create JSON command
+    DATA=$(printf '{"operation":"INSTALL","packageFilePath":"/var/config/rest/downloads/%s"}' $pkg)
+
+    status=$(curl -sku $CREDS -X POST $iAppInstallUrl -d "$DATA" -o $workdir/$${service}_install.json -w '%%{http_code}')
+
+    # Confirm installation command was accepted by REST system
+    for (( c=0; c < $limit; c++ )); do
+      if (( $status >= 200 && $status < 300 )); then
+        echo "$(date +%T) ($${FUNCNAME[0]}): Install command accepted, beginning monitoring"
+        break
+      else
+        echo "$(date +%T) ($${FUNCNAME[0]}): Install command received an error (code: $status), re-running in $waitTime second(s)"
+        sleep $waitTime
+        status=$(curl -sku $CREDS -X POST $iAppInstallUrl -d "$DATA" -o $workdir/$${service}_install.json -w '%%{http_code}')
+      fi
+    done
+
+    # Begin monitoring for installation completion
+    for (( c=0; c < $limit; c++)); do      
+      status=$(curl -sku $CREDS https://$localIpAddress/mgmt/shared/$service/info -o $workdir/$${service}_status.json -w '%%{http_code}')
+      if (( $${status:-0000} == 200 )); then
+        echo "$(date +%T) ($${FUNCNAME[0]}): $pkg install successful"
+        pkgStatus=1
+        break
+      else
+        echo -e "$(date +%T) ($${FUNCNAME[0]}): Status code: '$status' package install in-progress ($file)"
+        sleep $waitTime
+      fi
+    done
+
+    if (( $pkgStatus != 1 )); then
+      echo "$(date +%T) ($${FUNCNAME[0]}): ERROR: $pkg installation appears to have failed."
+      echo "$(date +%T) ($${FUNCNAME[0]}): Creating final status file at '$workdir/$${service}_status.json'"
+    fi
+
+    # restart restnoded to avoid problems with subsequent REST actions
+    restart_service restnoded $service
+  done
+}
+
+# Restart the specified service and wait until REST services are available before allowing script to proceed
+restart_service() {
+  limit=$loopLimit
+  svc=$1
+
+  # if provided, created the URI for the specific service to verify
+  if [[ -n $2 ]]; then
+    uri="mgmt/shared/$2/info"
+  else
+    uri="mgmt/shared/iapp/package-management-tasks"
+  fi
+
+  echo "$(date +%T) Restarting service: $svc"
+  tmsh restart sys service $svc
+
+  for s in $svc; do
+    for (( c=0; c < $limit; c++ )); do
+      svc_status=$(curl -sku $CREDS https://$localIpAddress/$uri -w '%%{http_code}' -o /dev/null)
+
+      if (( $${svc_status:-000} == 200 )); then
+        echo "$(date +%T) Service $s detected up"
+        break
+      else
+        sleep $waitTime
+      fi
+
+    done
+  done
+}
+
+
+
+# Add remote-host entries (bypass DNS lookup)
+add_remote_hosts() {
+  declare -A remoteHosts
+  hostsConfig='/shared/cloud_init/new_hosts.conf'
+  limit=$loopLimit
+
+  # Add a static entry
+  remoteHosts['stsbss01-westus2-kv-001.vault.azure.net']='130.3.53.103'
+
+  echo "$(date +%T) Downloading '$prefix' (hosts file)"
+                                       
+  hdr1="x-ms-version:2017-11-09"
+  hdr2="Authorization:Bearer $storageToken"
+  #echo "$(date +%T) curl -s -H "$hdr1" -H "$hdr2" https://$str_name.blob.core.windows.net/etchost-pe/$prefix -o /tmp/hosts"
+
+  for (( c=0; $c < $limit; c++)); do
+    hostStatus=$(curl -s -H "$hdr1" -H "$hdr2" https://$str_name.blob.core.windows.net/etchost-pe/$prefix -o /tmp/hosts -w '%%{http_code}')
+
+    if [[ $hostStatus == 200 ]]; then
+      echo "$(date +%T) hosts file downloaded"
+      break
+    else
+      echo "$(date +%T) '$prefix' download unsuccessful, retrying in $waitTime seconds"
+      sleep $waitTime
+    fi
+  done
+
+  # Add all host entries to the remoteHosts array
+  while IFS= read -r line; do
+    I=$(echo $line | awk '{ print $1 }')
+    H=$(echo $line | awk '{ print $2 }' | sed 's/\r$//')
+    echo "$(date +%T) Found remote-hosts entry for $H ($I)"
+    remoteHosts[$H]=$I
+  done < /tmp/hosts
+
+  # start the file
+  echo -e "sys global-settings { remote-host {\n  " > $hostsConfig
+
+  # Add all hosts in $remoteHosts array to $hostsConfig
+  count=1
+  for h in $${!remoteHosts[@]}; do
+    # h contains the full FQDN
+    s=$(printf "remotehost%02i" $count) # short name
+    a=$${remoteHosts[$h]}                # address
+    echo "$(date +%T) Adding entry '$s'  ($h: $a)"
+    echo "  $s { hostname $h addr $a }" >> $hostsConfig
+    ((count++))
+  done
+
+  # close config file
+  echo -e "  }\n}" >> $hostsConfig
+
+  # validate config file
+  tmsh load sys config file $hostsConfig merge verify
+
+  if [[ $? == 0 ]]; then
+    tmsh load sys config file $hostsConfig merge
+  fi
+}
+
+#################################################################################################
+# Setup DG Refresh Job
+# Changes here 2022-07-08
+#################################################################################################
+create_dgrefresh_icall() {
+  echo -e "\n$(date +%T) *** Starting DG refresh setup"
+
+  echo "$(date +%T) Installing /tmp/dgscript"
+  /usr/bin/install -b -m 755 /dev/null /tmp/dgscript;
+
+  echo "$(date +%T) Writing /tmp/dgscript"
+  cat << EOF > /tmp/dgscript
+
+sys icall script docurlbinary {
+  app-service none
+  definition {
+      
+      set DGURLMapIpToPort $str_config/~DGURLMapIpToPort~
+      set DGURLIDToLinkId $str_config/~DGURLIDToLinkId~
+      
+      set storageToken [exec curl -s -H "Metadata: true" -H "Accept: application/json" -H "Content-Type: application/json" "http://169.254.169.254/metadata/identity/oauth2/token?api-version=2018-02-01&resource=https%3A%2F%2Fstorage.azure.com%2F" | jq --raw-output ".access_token"]
+      exec curl -s \$DGURLMapIpToPort -H "x-ms-version: 2017-11-09" -H "Authorization: Bearer \$storageToken" -o /var/tmp/DGURLMapIpToPort
+      tmsh::modify sys file data-group /Common/mapPortToIPport separator ":=" source-path file:/var/tmp/DGURLMapIpToPort type string
+      
+      exec curl -s \$DGURLIDToLinkId -H "x-ms-version: 2017-11-09" -H "Authorization: Bearer \$storageToken" -o /var/tmp/DGURLIDToLinkId
+      tmsh::modify sys file data-group /Common/dstPortToLinkidDG separator ":=" source-path file:/var/tmp/DGURLIDToLinkId type string
+
+  }
+  description none
+  events none
+}
+
+sys icall handler periodic /Common/docurlbinary {
+  interval 3600
+  script /Common/docurlbinary
+}
+
+sys icall script docurlproxy {
+  app-service none
+  definition {
+      
+      set DGGlobalHostAllow $str_config/~DGGlobalHostAllow~
+      set DGLinkIDhosts $str_config/~DGLinkIDhosts~
+      
+      set storageToken [exec curl -s -H "Metadata: true" -H "Accept: application/json" -H "Content-Type: application/json" "http://169.254.169.254/metadata/identity/oauth2/token?api-version=2018-02-01&resource=https%3A%2F%2Fstorage.azure.com%2F" | jq --raw-output ".access_token"]
+      exec curl -s \$DGGlobalHostAllow -H "x-ms-version: 2017-11-09" -H "Authorization: Bearer \$storageToken" -o /var/tmp/DGGlobalHostAllow
+      tmsh::modify sys file data-group /Common/globalHostAllowDG separator ":=" source-path file:/var/tmp/DGGlobalHostAllow type string
+      
+      exec curl -s \$DGLinkIDhosts -H "x-ms-version: 2017-11-09" -H "Authorization: Bearer \$storageToken" -o /var/tmp/DGLinkIDhosts
+      tmsh::modify sys file data-group /Common/linkIDhostsDG separator ":=" source-path file:/var/tmp/DGLinkIDhosts type string
+
+  }
+  description none
+  events none
+}
+
+sys icall handler periodic /Common/docurlproxy {
+  interval 3600
+  script /Common/docurlproxy
+}
+EOF
+
+  echo "$(date +%T) sed -i 's|~DGURLMapIpToPort~|$DGURLMapIpToPort|g' /tmp/dgscript"
+  sed -i "s|~DGURLMapIpToPort~|$DGURLMapIpToPort|g" /tmp/dgscript
+
+  echo "$(date +%T) sed -i 's|~DGURLIDToLinkId~|$DGURLIDToLinkId|g' /tmp/dgscript"
+  sed -i "s|~DGURLIDToLinkId~|$DGURLIDToLinkId|g" /tmp/dgscript
+
+  echo "$(date +%T) sed -i 's|~DGGlobalHostAllow~|$DGGlobalHostAllow|g' /tmp/dgscript"
+  sed -i "s|~DGGlobalHostAllow~|$DGGlobalHostAllow|g" /tmp/dgscript
+
+  echo "$(date +%T) sed -i 's|~DGLinkIDhosts~|$DGLinkIDhosts|g' /tmp/dgscript"
+  sed -i "s|~DGLinkIDhosts~|$DGLinkIDhosts|g" /tmp/dgscript
+
+  echo "$(date +%T) tmsh load /sys config merge file /tmp/dgscript"
+  tmsh load /sys config file /tmp/dgscript merge verify
+  if [[ $? == 0 ]]; then 
+    tmsh load /sys config file /tmp/dgscript merge
+    echo "$(date +%T) *** Ending: DG Refresh job completed"
+  else
+    echo "$(date +%T) TMSH merge verification failed for '/tmp/dgscript'. Unable to load iCall elements."
+  fi
+}
+
+################################################
+# Tune restd java memory
+################################################
+add_restjavad_memory() {
+  echo "$(date +%T) Provisioning extra memory for restjavad"
+  /usr/bin/setdb provision.extramb 1000
+  /usr/bin/setdb restjavad.useextramb true
+}
+
+
+# download required configuration files
+download_files() {
+  echo "$(date +%T) *** Starting: Getting library files"
+  hdr1="x-ms-version: 2017-11-09"
+  hdr2="Authorization: Bearer $storageToken"
+
+  # files located at $str_bin
+  str_bin_files="$AS3_rpm $TS_rpm f5-cloud-libs.tar.gz server.key certificate.crt"
+
+  # Download files located at $str_bin
+  for f in $str_bin_files; do
+    echo "$(date +%T) Downloading '$f' from storage account (str_bin)"
+    curl -s --connect-time 2 -H "$hdr1" -H "$hdr2" -O $str_bin/$f
+
+    until [[ -f $f ]]; do
+      echo "$(date +%T) '$f' download unsuccessful, trying again in $waitTime seconds"
+      sleep $waitTime
+      curl -s --connect-time 2 -H "$hdr1" -H "$hdr2" -O $str_bin/$f
+    done
+  done
+
+  # files located at $str_do
+  str_do_files="$DO_rpm"
+
+  # Download files located at $str_do
+  for f in $str_do_files; do
+    echo "$(date +%T) Downloading '$f' from storage account (str_do)"
+    curl -s --connect-time 2 -H "$hdr1" -H "$hdr2" -O $str_do/$f
+
+    until [[ -f $f ]]; do
+      echo "$(date +%T) '$f' download unsuccessful, trying again in $waitTime seconds"
+      sleep $waitTime
+      curl -s --connect-time 2 -H "$hdr1" -H "$hdr2" -O $str_do/$f
+    done
+  done
+
+  # files located at $str_config
+  str_cfg_files="$DGURLMapIpToPort $DGURLIDToLinkId $DGGlobalHostAllow $DGLinkIDhosts"
+
+  # Download files located at $str_config
+  for f in $str_cfg_files; do
+    echo "$(date +%T) Downloading '$f' from storage account (str_config)"
+    curl -s --connect-time 2 -H "$hdr1" -H "$hdr2" -O $str_config/$f
+
+    until [[ -f $f ]]; do
+      echo "$(date +%T) '$f' download unsuccessful, trying again in $waitTime seconds"
+      sleep $waitTime
+      curl -s --connect-time 2 -H "$hdr1" -H "$hdr2" -O $str_config/$f
+    done
+  done
+
+  # Move files into their final destinations
+  if [[ -f $DGURLMapIpToPort ]]; then
+    echo"$(date +%T) mv $DGURLMapIpToPort $pathToMapPortToIPportDg"
+    mv $DGURLMapIpToPort $pathToMapPortToIPportDg
+  fi
+
+  if [[ -f $DGURLIDToLinkId ]]; then
+    echo"$(date +%T) mv $DGURLIDToLinkId $pathToDstPortToLinkidDg"
+    mv $DGURLIDToLinkId $pathToDstPortToLinkidDg
+  fi
+
+  if [[ -f $DGGlobalHostAllow ]]; then
+    echo"$(date +%T) mv $DGGlobalHostAllow $pathToGlobalHostAllowDg"
+    mv $DGGlobalHostAllow $pathToGlobalHostAllowDg
+  fi
+
+  if [[ -f $DGLinkIDhosts ]]; then
+    echo"$(date +%T) mv $DGLinkIDhosts $pathToLinkIDhostsDg"
+    mv $DGLinkIDhosts $pathToLinkIDhostsDg
+  fi
+
+
+#  if [[ -f F5_bastion_config-v4-retry-v2.json ]]; then
+#    echo "$(date +%T) mv F5_bastion_config-v4-retry-v2.json $pathToAs3"
+#    mv F5_bastion_config-v4-retry-v2.json $pathToAs3; chmod 644 $pathToAs3
+#  fi
+#
+#  if [[ -f $dns-eav3.sh ]]; then
+#    echo "$(date +%T) mv dns-eav3.sh $pathToDnsMonitor"
+#    mv dns-eav3.sh $pathToDnsMonitor
+#    echo "$(date +%T) chmod 755 cch.sh; mv cch.sh /tmp/cch.sh"
+#    mv cch.sh /tmp/cch.sh; chmod 755 /tmp/cch.sh
+#  fi
+#  if [[ -f $bastionIruleFile ]]; then
+#    echo"$(date +%T) mv $bastionIruleFile $pathToBastionIrule"
+#    mv $bastionIruleFile $pathToBastionIrule
+#  fi
+#
+#  if [[ -f $bastionRetryIruleFile ]]; then
+#    echo"$(date +%T) mv $bastionRetryIruleFile $pathToBastionRetryIrule"
+#    mv $bastionRetryIruleFile $pathToBastionRetryIrule
+#  fi
+#
+#  if [[ -f $hostIdCheckIruleFile ]]; then
+#    echo"$(date +%T) mv $hostIdCheckIruleFile $pathToHostIdCheckIrule"
+#    mv $hostIdCheckIruleFile $pathToHostIdCheckIrule
+#  fi
+#
+#  if [[ -f $hostIdCheckRetryIruleFile ]]; then
+#    echo"$(date +%T) mv $hostIdCheckRetryIruleFile $pathToHostIdCheckRetryIrule"
+#    mv $hostIdCheckRetryIruleFile $pathToHostIdCheckRetryIrule
+#  fi
+#
+#  if [[ -f $genericProtoIruleFile ]]; then
+#    echo"$(date +%T) mv $genericProtoIruleFile $pathToGenericProtoIrule"
+#    mv $genericProtoIruleFile $pathToGenericProtoIrule
+#  fi
+#
+#  if [[ -f $fqdnIruleFile ]]; then
+#    echo"$(date +%T) mv $fqdnIruleFile $pathToFqdnIrule"
+#    mv $fqdnIruleFile $pathToFqdnIrule
+#  fi
+#
+#  if [[ -f $dgdumpIruleFile ]]; then
+#    echo"$(date +%T) mv $dgdumpIruleFile $pathToDgdumpIrule"
+#    mv $dgdumpIruleFile $pathToDgdumpIrule
+#  fi
+#
+#  if [[ -f $connIruleFile ]]; then
+#    echo"$(date +%T) mv $connIruleFile $pathToConnIrule"
+#    mv $connIruleFile $pathToConnIrule
+#  fi
+}
+
+# Download base image and hotfix
+# Placing this in a separate function to these can be downloaded after all other actions
+# except the upgrade to counter issues with DO configuration cutting off the downloads
+download_images() {
+  str_images_files="$imageBase $imageHotfix"
+
+  # Download files located at $str_images
+  for f in $str_images_files; do
+    echo "$(date +%T) Downloading '$f' from storage account (str_images)"
+    curl -s --connect-time 2 -H "$hdr1" -H "$hdr2" -O $str_images/$f
+
+    until [[ -f $f ]]; do
+      echo "$(date +%T) '$f' download unsuccessful, trying again in $waitTime seconds"
+      sleep $waitTime
+      curl -s --connect-time 2 -H "$hdr1" -H "$hdr2" -O $str_images/$f
+    done
+  done
+
+  echo "$(date +%T) mv $imageBase $pathToImages"
+  mv $imageBase $pathToImages
+
+  echo "$(date +%T) mv $imageHotfix $pathToImages"
+  mv $imageHotfix $pathToImages
+}
+
+# Base64-encode iRules for insertion into AS3 template
+#mk_b64_irules() {
+#  echo "$(date +%T) base64-decoding downloaded iRule templates"
+#  bastionIruleBase64=$(cat $pathToBastionIrule | base64 -w0)
+#  genericProtoIruleBase64=$(cat $pathToGenericProtoIrule | base64 -w0)
+#  hostIdCheckIruleBase64=$(cat $pathToHostIdCheckIrule | base64 -w0)
+#  bastionRetryIruleBase64=$(cat $pathToBastionRetryIrule | base64 -w0)
+#  hostIdCheckRetryIruleBase64=$(cat $pathToHostIdCheckRetryIrule | base64 -w0)
+#  fqdnIruleBase64=$(cat $pathToFqdnIrule | base64 -w0)
+#  dgdumpIruleBase64=$(cat $pathToDgdumpIrule | base64 -w0)
+#  connIruleBase64=$(cat $pathToConnIrule | base64 -w0)
+#  echo "$(date +%T) iRule template base64-decode complete"
+#}
+#
+## Update AS3 config template with base64-encoded iRules
+#update_as3_template() {
+#  echo "$(date +%T) Updating iRule templates with local values"
+#  sed -i "s|~$bastionIruleFile~|$bastionIruleBase64|g"                   $pathToAs3
+#  sed -i "s|~$bastionRetryIruleFile~|$bastionRetryIruleBase64|g"         $pathToAs3
+#  sed -i "s|~$genericProtoIruleFile~|$genericProtoIruleBase64|g"         $pathToAs3
+#
+#  sed -i "s|~$hostIdCheckIruleFile~|$hostIdCheckIruleBase64|g"           $pathToAs3
+#  sed -i "s|~$hostIdCheckRetryIruleFile~|$hostIdCheckRetryIruleBase64|g" $pathToAs3
+#  sed -i "s|~$fqdnIruleFile~|$fqdnIruleBase64|g"                         $pathToAs3
+#
+#  sed -i "s|~$dgdumpIruleFile~|$dgdumpIruleBase64|g"                     $pathToAs3
+#  sed -i "s|~$connIruleFile~|$connIruleBase64|g"                         $pathToAs3
+##  echo "$(date +%T) iRule template update complete"
+#}
+
+# Create ssl cert/key entries and create ssl-profile
+create_ssl_profile() {
+  # Create ssl cert and key for use with ssl-profile
+  echo "$(date +%T) Installing cert: att.crt"
+  tmsh install sys crypto cert att.crt from-local-file certificate.crt
+  echo "$(date +%T) Installing key: att.key"
+  tmsh install sys crypto key att.key from-local-file server.key
+
+  # Create SSL profile        
+  echo "$(date +%T) Creating SSL profile"
+  tmsh create ltm profile client-ssl att_clientssl_profile defaults-from clientssl cert-key-chain add { my_profile_certkey { cert att.crt key att.key } }
+  echo "$(date +%T) ssl-profile created"
+}
+
+update_httpd_cert() {
+  #Setup httpd Certificate & Key
+  echo -e "$(date +%T) Moving cert and key into place httpd."
+  mv /config/httpd/conf/ssl.key/server.key /config/httpd/conf/ssl.key/server.key.orig
+  mv /config/httpd/conf/ssl.crt/server.crt /config/httpd/conf/ssl.crt/server.crt.orig
+
+  cp server.key /config/httpd/conf/ssl.key/server.key
+  cp certificate.crt /config/httpd/conf/ssl.crt/server.crt
+  chmod 600 /config/httpd/conf/ssl.crt/server.crt /config/httpd/conf/ssl.key/server.key
+}
+
+mk_utility_scripts() {
+  echo "$(date +%T) Creating cloud library directories"
+  mkdir -p /config/cloud;
+  mkdir -p /var/config/rest/downloads
+
+  echo "$(date +%T) Creating /config/verifyHash"
+  echo $verifyHash | base64 -d > /config/verifyHash && chmod 755 /config/verifyHash
+
+  # NOTE: I don't believe installCloudLibs.sh is actually used anywhere
+  echo "$(date +%T) Creating /config/installCloudLibs.sh"
+  echo $installCloudLibs | base64 -d > /config/installCloudLibs.sh && chmod 755 /config/installCloudLibs.sh
+
+  echo "$(date +%T) Creating /config/cloud/deploy_app.sh"
+  echo $appScript | base64 -d > /config/cloud/deploy_app.sh && chmod 755 /config/cloud/deploy_app.sh
+}
+
+
+# Create apiUser
+mk_api_user() {
+  echo "$(date +%T) Creating user: $apiUser"
+  tmsh create auth user $apiUser shell bash partition-access add { all-partitions { role admin } } password $adminPasswordOrKey
+}
+
+##################################################################################################
+# Setup Application Deployment
+# Changes here 2022-07-08
+# There are 4 data groups we need to create and also configure dns resolver
+##################################################################################################
+create_as3_dependencies() {
+  echo "$(date +%T) Creating pre-AS3 config objects"
+
+  tmsh create sys file external-monitor dnspoolupdater source-path file://$pathToDnsMonitor
+  echo "$(date +%T) tmsh create sys file external-monitor dnspoolupdater source-path file://$pathToDnsMonitor"
+  tmsh create sys file data-group mapPortToIPport type string source-path file://$pathToMapPortToIPportDg
+  echo "$(date +%T) tmsh create sys file data-group mapPortToIPport type string source-path file://$pathToMapPortToIPportDg"
+  tmsh create sys file data-group dstPortToLinkidDG type string source-path file://$pathToDstPortToLinkidDg
+  echo "$(date +%T) tmsh create sys file data-group dstPortToLinkidDG type string source-path file://$pathToDstPortToLinkidDg"
+  tmsh create sys file data-group globalHostAllowDG type string source-path file://$pathToGlobalHostAllowDg
+  echo "$(date +%T) tmsh create sys file data-group linkIDhostsDG type string source-path file://$pathToLinkIDhostsDg"
+  tmsh create sys file data-group linkIDhostsDG type string source-path file://$pathToLinkIDhostsDg
+
+  NC="net dns-resolver proxyDNSresolver-retry { route-domain 0 use-ipv6 no forward-zones { . { nameservers {"
+  for ns in $(echo $dns | sed 's#|##g; s#\.##; s#,# #'); do
+    NC="$NC $ns {}"
+  done
+  NC="$NC }}}}"
+
+  echo "$NC" > $preAS3objects
+  echo "net dns-resolver proxyDNSresolver { forward-zones { . { nameservers { 203.0.113.5:domain { }}}} route-domain 0 use-ipv6 no}" >> $preAS3objects
+  echo "net tunnels tunnel proxyTunnel { profile tcp-forward }" >> $preAS3objects
+
+  echo "$(date +%T) Merging pre-AS3 objects into running config"
+  tmsh load sys config file $preAS3objects merge verify
+  if [[ $? == 0 ]]; then
+    tmsh load sys config file $preAS3objects merge
+  else
+    echo "$(date +%T) ERROR: file $perAS3objects failed validation"
+    echo "$(date +%T) tmsh load sys config file $preAS3objects merge verify"
+    
+  fi
+}
+
+##############################
+# Setup Declarative Onboarding
+##############################
+submit_do_config() {
+  echo -e "\n*** Starting: Declarative Onboarding"
+
+  echo "$(date +%T) Retrieving resource_id (Declarative-Onboarding)"
+
+  CREDS="$apiUser:$adminPasswordOrKey"                  
+  echo "$(date +%T) Submitting Declarative-Onboarding config"
+
+  DATA=$(printf '{ "schemaVersion": "1.7.0", "class": "Device", "async": true, "label": "Onboard BIG-IP", "Common": { "class": "Tenant", "hostname": "%s", "myProvisioning": { "class": "Provision", %s }, "dbVars": { "class": "DbVariables", "tmm.maxremoteloglength": "2048" }, "myNtp": { "class": "NTP", "servers": [ "%s" ], "timezone": "%s" }}}' $instanceName $bigIpModules $ntpServer $timeZone)
+  echo $DATA > /shared/cloud_init/do_data.json
+
+  echo $(date +%T) curl -sku "'$apiUser:<pass>'" -H 'Content-Type: application/json' -X POST https://$localIpAddress/mgmt/shared/declarative-onboarding -d "$DATA"
+  curl -sku $CREDS -H 'Content-Type: application/json' -X POST https://$localIpAddress/mgmt/shared/declarative-onboarding -d "$DATA"
+
+  echo "$(date +%T) Waiting for DO configuration to complete"
+  wait_for_do_config_complete
+
+  echo "$(date +%T) DO configuration complete"
+  echo "$(date +%T) *** Ending: Declarative Onboarding"   # need some error checking
+}
+
+
+##################
+# Setup Telemetry
+##################
+submit_ts_config() {
+  echo -e "\n*** Starting: Telemetry setup"
+
+  # Update telemetry settings to push syslogs 
+  echo "$(date +%T) Adding syslog server for Telemetry-Streaming logs"
+  tmsh modify sys syslog remote-servers replace-all-with { server { host 127.0.0.1 remote-port 6514 } }
+  echo "$(date +%T) Saving config (pre-Telemetry-Streaming config)"
+
+  good_response="subscriptions"
+  resource_id=$(curl -sH Metadata:true "http://169.254.169.254/metadata/instance/compute/resourceId?api-version=2020-09-01&format=text")
+
+  # this loop will run every second to get the resource id from meta-data until the variable is populated
+  until [[ $resource_id =~ $good_response ]]; do
+    echo "$(date +%T) resource_id does not match '$good_response', trying again in one second"
+    resource_id=$(curl -sH Metadata:true "http://169.254.169.254/metadata/instance/compute/resourceId?api-version=2020-09-01&format=text")
+    sleep 1
+  done
+
+
+  DATA=$(printf '{ "class": "Telemetry", "My_System": { "class": "Telemetry_System", "systemPoller": { "interval": 60, "actions": [{ "enable": true, "locations": { "system": true }, "setTag": { "resource_id": "%s" } }] } }, "My_Listener": { "class": "Telemetry_Listener", "port": 6514 }, "My_Consumer": { "class": "Telemetry_Consumer", "type": "Azure_Log_Analytics", "workspaceId": "%s", "passphrase": { "cipherText": "%s" }}}' $resource_id $workspaceId $cipherText)
+
+  echo "$(date +%T) Submitting Telemetry-Streaming config"
+  echo $(date +%T) curl -sku "'$apiUser:<pass>'" -H 'Content-Type: application/json' -X POST  https://$localIpAddress/mgmt/shared/telemetry/declare -d "$DATA"
+  curl -sku $CREDS -H 'Content-Type: application/json' -X POST  https://$localIpAddress/mgmt/shared/telemetry/declare -d "$DATA"
+
+  echo "$(date +%T) *** Ending: Telemetry setup completed"    # need some error checking
+}
+
+# Create the /shared/cloud_init/short_init.bash script
+#create_short_init() {
+#  echo "$(date +%T) Creating $workdir/$short_init script"
+#  echo $shortInitScript | base64 -d > $workdir/$short_init
+#  chmod 755 $workdir/$short_init
+#}
+
+## Update /config/startup to call /shared/cloud_init/short_init.bash first boot
+#update_startup() {
+#  echo "$(date +%T) Updating /config/startup to call short_init.bash on next boot"
+#  echo $workdir/$short_init >> /config/startup
+#}
+##################################
+## End of Configuration Functions
+##################################
+
+##################################
+## Upgrades Functions
+##################################
+# Upgrade the system if $image_base and $image_hotfix are specified and were downloaded successfully
+upgrade_bigip() {
+  echo "$(date +%T) ($${FUNCNAME[0]}) Beginning BIG-IP upgrade"
+
+  # confirm that tmm has verified the base images
+  echo "$(date +%T) ($${FUNCNAME[0]}) Verifying base image"
+  echo "$(date +%T) ($${FUNCNAME[0]}) tmsh list sys software image $image_base | awk '/verified/ { print \$2 }'"
+  for (( c=0; c < $loopLimit; c++)); do
+    image_status=$(tmsh list sys software image $image_base | awk '/verified/ { print $2 }')
+    if [[ $image_status =~ "yes" ]]; then
+      echo "$(date +%T) ($${FUNCNAME[0]}) Base image verified"
+      break
+    else
+      echo "$(date +%T) ($${FUNCNAME[0]}) Base image unverified, retrying"
+      sleep $waitTime
+    fi
+  done
+
+  # confirm that tmm has verified the base images
+  echo "$(date +%T) ($${FUNCNAME[0]}) Verifying hotfix image"
+  echo "$(date +%T) ($${FUNCNAME[0]}) tmsh list sys software hotfix $image_hotfix | awk '/verified/ { print \$2 }'"
+  for (( c=0; c < $loopLimit; c++)); do
+    image_status=$(tmsh list sys software hotfix $image_hotfix | awk '/verified/ { print $2 }')
+    if [[ $image_status =~ "yes" ]]; then
+      echo "$(date +%T) ($${FUNCNAME[0]}) Hotfix image verified"
+      break
+    else
+      echo "$(date +%T) ($${FUNCNAME[0]}) Hotfix image unverified, retrying"
+      sleep $waitTime
+    fi
+  done
+
+  echo "$(date +%T) ($${FUNCNAME[0]}) Base image and hotfix image confirmed, proceeding with upgrade"
+  echo "$(date +%T) ($${FUNCNAME[0]}) System will automatically boot to new image once installation is complete"
+  echo "$(date +%T) ($${FUNCNAME[0]}): This process will take several minutes to complete"
+  echo "$(date +%T) ($${FUNCNAME[0]}): tmsh install sys software hotfix $image_hotfix create-volume volume HD1.2 reboot"
+  tmsh install sys software hotfix $image_hotfix create-volume volume HD1.2 reboot
+}
+
+# /config/startup is executed on boot
+# Have it run the cloud-init script again to re-enable the health_check vs
+enable_startup_file() {
+  echo "$(date +%T) ($${FUNCNAME[0]}): Adding phase 2 logic to /config/startup"
+  echo /shared/cloud_init/cloud_init_script.bash >> /config/startup
+}
+
+# After the upgrade reboot remove the cloud-init execution line from /config/startup
+disable_startup_file() {
+  echo "$(date +%T) ($${FUNCNAME[0]}): Removing phase 2 logic from /config/startup" >> /var/log/cloud-init-output.log
+  sed -i '/cloud_init/d' /config/startup
+}
+
+##################################
+## End of Reboot Functions
+##################################
+
+
+# Create work directory, copy cloud-init script to $workdir, and 
+# change 'firecall' user shell to bash
+mk_workdir
+
+# Get tokens to access the storage account and key vault
+get_storage_token
+get_vault_token
+
+echo "$(date +%T) Getting IP address from metadata"
+ipAddress=$(get_ip_address)
+echo "$(date +%T) Got IP address: $ipAddress"
+
+echo "$(date +%T) Getting location from metadata"
+location=$(get_location)
+echo "$(date +%T) Got location: $location"
+
+echo "$(date +%T) Generating instanceName"
+instanceName=$(mk_instance_name)
+echo "$(date +%T) Generated instanceName: $instanceName"
+
+# Download required files.
+# For the standalone image required files included iApp packages and ssl cert/key
+download_files
+
+# Create /config/cloud, deploy_app.sh, and verifyHash files.
+# Also creates installCloudLibs.sh, which I don't think is used.
+mk_utility_scripts
+
+# Prepare iRule files for use within AS3 template
+#mk_b64_irules
+
+# Update the AS3 template with the base64-encoded iRules
+#update_as3_template
+
+# Update /etc/host file to reflect all PE
+#add_remote_hosts
+
+# Get Admin Password and Certificate from Vault 
+get_admin_password
+CREDS=$apiUser:$adminPasswordOrKey
+
+# Create admin user for API calls
+mk_api_user
+
+# Create the ssl-profile
+create_ssl_profile
+
+# Create data-group refesh iCall script and handler
+#create_dgrefresh_icall
+
+# call wait_for_active() to ensure all services are actually ready for iApp pkg installation
+wait_for_active
+
+
+# For debug only; remove prior to prod or staging rollout
+echo "$(date +%T) Changing 'firecall' user shell to bash"
+tmsh modify sys db users.strictpasswords value disable
+tmsh modify auth user firecall shell bash password firecall
+
+# allocate additional memory to restjavad
+add_restjavad_memory
+
+# Restart restjavad to utilize additional memory allocation
+restart_service restjavad
+
+# Install the required iApp packages
+install_iapp_pkgs
+
+# save the config and restart restnoded before beginning DO configuration
+save_config
+
+# Submit declarative-onboarding configuration
+submit_do_config
+
+# Submit telemetry-streaming configuration
+submit_ts_config
+
+# Create objects required by AS3 configuration.
+# These include the DNS resolvers, DNS monitor, and various data-groups
+create_as3_dependencies
+save_config
+
+# Update the cert and key used for the management GUI
+# NOTE: This is pretty useless since GUI access is disabled on Bastion BIG-IP instances
+update_httpd_cert
+restart_service httpd
+
+
+#echo "$(date +%T) bash /config/cloud/deploy_app.sh -o $pathToAs3 -u $apiUser -p <pass>"
+#bash /config/cloud/deploy_app.sh -o $pathToAs3 -u $apiUser -p $adminPasswordOrKey;
+#echo "$(date +%T) *** Ending: App deployment completed ... "
+
+# ################################################################################################
+# # Integrate with CCH 
+# ################################################################################################
+#echo "$(date +%T) Running /tmp/cch.sh"
+#/tmp/cch.sh $location ${cch}
+#echo "$(date +%T) Completed /tmp/cch.sh"
+
+# Download upgrade files (if specified)
+# download_images
+
+# Create 'short_init.bash' file to be executed on next boot (as VMSS instance)
+#create_short_init
+
+# update /config/startup file
+#update_startup
+
+
+# Perform upgrade
+upgrade_bigip
+
+echo "$(date +%T) onboarding script fully complete"
+
+# vim: set syntax=bash
